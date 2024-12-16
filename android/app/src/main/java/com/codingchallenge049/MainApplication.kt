@@ -1,4 +1,4 @@
-package com.codingchallenge
+package com.codingchallenge049
 
 import android.app.Application
 import com.facebook.react.PackageList

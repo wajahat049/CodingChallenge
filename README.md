@@ -1,8 +1,50 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+# Loom Videos
+
+1. https://www.loom.com/share/6bf984de642b46958fdd34d50c6f6e8a?sid=7e248e55-af08-471f-aa19-d27e24178a47
+2. https://www.loom.com/share/72152dac1d95454aba0029b09d93f580?sid=186cc70a-0bde-4bb2-afe9-d02a76c119b9
+
+# Approach
+
+## Google Authentication
+
+Used Firebase Authentication and @react-native-google-signin/google-signin.
+Display user’s name and profile picture on the Home Screen and Authentication Screen if looged in.
+Handled login/logout flows.
+
+## API Integration
+
+Use React Query to fetch and paginate Pokémon data from the API.
+Implement infinite scrolling with loading/error states.
+
+## Push Notifications
+
+Integrate Firebase Cloud Messaging (FCM) for handling foreground, background, and closed states.
+Navigate to Details Screen via notification to display random Pokémon details.
+
+## Navigation
+
+Use React Navigation for three screens:<br/>
+Auth Screen: Display Google Auth Button and user details if looged in. <br/>
+Home Screen: Display Pokémon list and three buttons (Catch Pokémon, View Team, Settings).<br/>
+Details Screen: Show Pokémon details on selection or via notification.
+
+## State Persistence
+
+Use Redux Persist or AsyncStorage to persist button states across app restarts and also user information.
+
+## Bonus Features
+
+1. Search Pokemon.
+2. Loading Activity Indicator.
+3. Detail Screen Pokemon Image Animation.
+4. Error handling for APIs.
+5. Redux State for User information.
+
 # Getting Started
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+> **Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
 
 ## Step 1: Start the Metro Server
 

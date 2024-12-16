@@ -1,118 +1,139 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useRef} from 'react';
+import {NavigationContainer, useNavigation} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import HomeScreen from './src/screens/Home';
+import DetailsScreen from './src/screens/Details';
+import AuthScreen from './src/screens/Auth';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+  registerForPushNotificationsAsync,
+  initializeFCM,
+} from './src/services/notifications/notificationHandler';
+import {QueryClient, QueryClientProvider} from 'react-query';
+import {PersistGate} from 'redux-persist/integration/react';
+import {Provider} from 'react-redux';
+import {store, persistor} from './src/store';
+import PushNotification from 'react-native-push-notification';
+import messaging from '@react-native-firebase/messaging';
+import {Alert, Platform} from 'react-native';
+import RootNavigator from './src/navigation/RootNavigator';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const Stack = createNativeStackNavigator();
+const queryClient = new QueryClient();
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const App: React.FC = () => {
+  // const navigation = useNavigation();
+  const navigationContainerRef = useRef();
+  useEffect(() => {
+    // Initialize FCM and register push notifications
+    initializeFCM();
+    registerForPushNotificationsAsync();
+    messaging()
+      .getToken()
+      .then(token => console.log('FCM Token:', token));
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
+    // console.log('TOKEN');
+
+    // Foreground message handler
+    const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+      console.log('FCM Message Data:', remoteMessage);
+      if (remoteMessage?.notification?.body == 'New Pokemon is found') {
+        Alert.alert('Pokemon', 'New Pokemon is found', [
           {
-            color: isDarkMode ? Colors.white : Colors.black,
+            text: 'Cancel',
+            onPress: () => console.log('Cancel Pressed'),
+            style: 'cancel',
           },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
           {
-            color: isDarkMode ? Colors.light : Colors.dark,
+            text: 'OPEN',
+            onPress: () => {
+              if (navigationContainerRef?.current) {
+                navigationContainerRef?.current?.navigate('Details', {
+                  itemId: `https://pokeapi.co/api/v2/pokemon/${Math.floor(
+                    Math.random() * 50,
+                  )}`,
+                });
+              }
+            },
           },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+        ]);
+      }
+      PushNotification.localNotification({
+        title: remoteMessage.notification?.title || 'Notification',
+        message: remoteMessage.notification?.body,
+        data: remoteMessage.data,
+      });
+    });
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+    // Background message handler
+    const unsubscribeOnNotificationOpenedApp =
+      messaging().onNotificationOpenedApp(remoteMessage => {
+        if (remoteMessage)
+          console.log(
+            'Notification caused app to open from background:',
+            remoteMessage,
+          );
+        if (remoteMessage?.notification?.body == 'New Pokemon is found') {
+          if (navigationContainerRef?.current) {
+            navigationContainerRef?.current?.navigate('Details', {
+              itemId: `https://pokeapi.co/api/v2/pokemon/${Math.floor(
+                Math.random() * 50,
+              )}`,
+            });
+          }
+        }
+      });
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+    // App was opened by a notification (in a killed state i.e Closed)
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage) {
+          console.log(
+            'Notification caused app to open from a killed state:',
+            remoteMessage?.notification?.body,
+          );
+          if (remoteMessage?.notification?.body == 'New Pokemon is found') {
+            console.log('IF');
+            if (navigationContainerRef?.current) {
+              console.log('IFFFFF');
+              navigationContainerRef?.current?.navigate('Details', {
+                itemId: `https://pokeapi.co/api/v2/pokemon/${Math.floor(
+                  Math.random() * 50,
+                )}`,
+              });
+            } else {
+              console.log('ELSEEEEEEE');
+
+              setTimeout(() => {
+                if (navigationContainerRef?.current) {
+                  console.log('ELSEEEEEEE IFFFFFF');
+                  navigationContainerRef?.current?.navigate('Details', {
+                    itemId: `https://pokeapi.co/api/v2/pokemon/${Math.floor(
+                      Math.random() * 10,
+                    )}`,
+                  });
+                }
+              }, 2000);
+            }
+          }
+        }
+      });
+
+    return () => {
+      unsubscribeOnMessage();
+      unsubscribeOnNotificationOpenedApp();
+    };
+  }, []);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <QueryClientProvider client={queryClient}>
+          <RootNavigator navigationContainerRef={navigationContainerRef} />
+        </QueryClientProvider>
+      </PersistGate>
+    </Provider>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;
